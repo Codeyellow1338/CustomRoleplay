@@ -300,7 +300,7 @@ function DrawCustomHud()
     local mX = hX
     local mY = hY - barHeight / 1.2
     local moneyAmount = ply:GetMoney()
-    local moneyText = markup.Parse("<font=HUD_Shadow><color=255,255,255>Деньги: </color><color=0,192,0>" .. "$" .. moneyAmount .. "</color></font>")
+    local moneyText = markup.Parse("<font=HUD_Shadow><color=255,255,255>Деньги: </color><color=0,192,0>" .. "$" .. moneyAmount .. " + $" .. ply:GetSalary() ..  "</color></font>")
     moneyText:Draw(mX, mY, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 
     -- Job
@@ -319,6 +319,30 @@ function DrawCustomHud()
             local name   = v["name"]
 
             DrawWeaponBox(CIndex, RIndex, name)
+        end
+    end
+
+    -- Inventory 6 x 3
+    local cellSize = ScrW() * .03
+    local cellPadding = cellSize / 20
+    local InvX = ScrW() * .5 - cellSize * 3 - cellPadding * 2.5
+    local InvY = ScrH() - cellSize * 3 - cellPadding * 2
+
+    local function DrawInventoryCell(CIndex, RIndex)
+
+        local currentX = InvX + (cellSize + cellPadding) * CIndex
+        local currentY = InvY + (cellSize + cellPadding) * RIndex
+
+        surface.SetDrawColor(0,0,0,185)
+        surface.DrawRect(currentX, currentY, cellSize, cellSize)
+        surface.SetDrawColor(255, 255, 255, 185)
+        surface.DrawOutlinedRect(currentX, currentY, cellSize, cellSize, 3)
+
+    end
+
+    for c = 0, 5, 1 do
+        for r = 0, 2, 1 do
+            DrawInventoryCell(c, r)
         end
     end
 

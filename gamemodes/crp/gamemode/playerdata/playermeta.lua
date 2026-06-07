@@ -5,8 +5,7 @@ function ply:GetMoney()
 end
 
 function ply:SetMoney(amount)
-    self.CRPData.Money = math.max(0, amount)
-    self:SetNW2Int("CRP_Money", self.CRPData.Money)
+    self:SetNW2Int("CRP_Money", math.max(0, amount))
 end
 
 function ply:GetSalary()
@@ -18,8 +17,7 @@ function ply:GetJob()
 end
 
 function ply:SetJob(newJob)
-    self.CRPData.Job = newJob
-    self:SetNW2String("CRP_Job", self.CRPData.Job)
+    self:SetNW2String("CRP_Job", newJob)
 end
 
 function ply:GetHunger()
@@ -27,8 +25,7 @@ function ply:GetHunger()
 end
 
 function ply:SetHunger(amount)
-    self.CRPData.Hunger = amount
-    self:SetNW2Int("CRP_Hunger", self.CRPData.Hunger)
+    self:SetNW2Int("CRP_Hunger", math.max(0, amount))
 end
 
 function ply:GetInv() -- TODO

@@ -8,10 +8,15 @@ AddCSLuaFile("playerdata/playermeta.lua")
 
 include("playerdata/datainitializer.lua")
 include("playerdata/playermeta.lua")
+-- Mechanics
+AddCSLuaFile("mechanics/cl_hunger.lua")
+
+include("mechanincs/hunger.lua")
 -- Others
 AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
 
+include("playerdata/database.lua")
 include("shared.lua")
 
 function GM:PlayerSpawn(ply)

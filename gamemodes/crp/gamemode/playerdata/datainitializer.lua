@@ -1,11 +1,23 @@
 function Initialize(ply)
 
+    local steamid = ply:SteamID64()
+    local dbResponse = sql.QueryRow("SELECT * FROM crp_playerdata WHERE steamid = " .. sql.SQLStr(steamid))
+
+    local initialMoney, initialInventory
+
+    if dbResponse then
+        initialMoney = tonumber(dbResponse.money)
+        initialInventory = util.JSONToTable(dbResponse.inventory)
+    else
+        initialMoney = 5000
+        initialInventory = {}
+    end
     ply.CRPData = {
-        Money           = 5000,
+        Money           = initialMoney,
         Salary          = 45,
         Job             = "Гражданин",
         Hunger          = 100,
-        Inventory       = {},
+        Inventory       = initialInventory,
 
     }
 
