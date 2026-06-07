@@ -1,0 +1,326 @@
+-- Materials
+local healthMaterial = Material("vgui/heart.png", "nocull smooth")
+local armorMaterial = Material("vgui/armor.png", "nocull smooth")
+local foodMaterial = Material("vgui/food.png", "nocull smooth")
+
+-- Font
+local textSize = ScrH() * .025
+surface.CreateFont("HUD_Default", {
+    font = "Arial",
+    size = textSize,
+    weight = 800,
+    antialias = true
+})
+
+surface.CreateFont("HUD_Ammo", {
+    font = "Arial",
+    size = textSize * 1.25,
+    weight = 800,
+    antialias = true,
+    shadow = true
+})
+
+surface.CreateFont("HUD_Shadow", {
+    font = "Arial",
+    size = textSize,
+    weight = 600,
+    antialias = true,
+    shadow = true,
+})
+
+-- Others
+function GetSortedWeapons()
+
+    local weps = LocalPlayer():GetWeapons()
+
+    table.sort(weps, function(a, b)
+        if !IsValid(a) or !IsValid(b) then return end
+        
+        local slotA, slotB = a:GetSlot(), b:GetSlot()
+        if slotA ~= slotB then
+            return slotA < slotB
+        end
+
+        return a:GetSlotPos() < b:GetSlotPos()
+    end)
+
+    return weps
+end
+
+function BuildWeaponGrid()
+
+    local grid = {}
+    local weps = GetSortedWeapons()
+
+    local weaponsBySlot = {}
+    for _, wep in ipairs(weps) do
+        local slot = wep:GetSlot()
+        weaponsBySlot[slot] = weaponsBySlot[slot] or {}
+        table.insert(weaponsBySlot[slot], wep)
+    end
+
+    local activeSlots = table.GetKeys(weaponsBySlot)
+    table.sort(activeSlots)
+
+    for virtualCIndex, realSlot in ipairs(activeSlots) do
+        local cIndex = virtualCIndex - 1
+
+        for rIndex, wep in ipairs(weaponsBySlot[realSlot]) do
+            table.insert(grid, {
+                wep = wep,
+                cIndex = cIndex,
+                rIndex = rIndex - 1,
+                name = wep:GetPrintName()
+            })
+        end
+    end
+
+    return grid
+end
+
+-- Weapon Selection Logic
+local selectedC = 0
+local selectedR = 0
+local WSVisible = false
+local WSLastInput = nil
+local WSHideTime = 0
+
+function WeaponSelection(ply, bind, pressed)
+
+    if !pressed then return end
+    local isHUDACtive = CurTime() < WSHideTime
+
+    local weaponsPerColumn = {
+        [-1] = 0,
+        [0] = 0,
+        [1] = 0,
+        [2] = 0,
+        [3] = 0,
+        [4] = 0,
+        [5] = 0,
+        [6] = 0,
+        [7] = 0,
+        [8] = 0,
+        [9] = 0,
+    }
+    local grid = BuildWeaponGrid()
+    for i,v in pairs(grid) do
+        local currentColumn = v["cIndex"]
+        weaponsPerColumn[currentColumn] = weaponsPerColumn[currentColumn] + 1
+    end
+
+    if string.find(bind, "slot") then -- Selecting Slot
+
+        WSHideTime = CurTime() + 3
+
+        if !isHUDACtive then
+            WSLastInput = nil
+        end
+
+        if WSLastInput ~= bind then
+            if weaponsPerColumn[tonumber(bind[-1]) - 1] == 0 then return end
+            selectedC = tonumber(bind[-1]) - 1
+            selectedR = 0
+            WSVisible = true
+        else
+            selectedR = selectedR + 1
+            if selectedR >= weaponsPerColumn[selectedC] then selectedR = 0 end
+        end
+        WSLastInput = bind
+        surface.PlaySound("common/wpn_moveselect.wav")
+
+        return true
+
+    end
+
+    if string.find(bind, "+attack") and WSLastInput and isHUDACtive then
+    
+        WSLastInput = nil
+        WSVisible = false
+        for i, v in pairs(grid) do
+            if selectedC == v["cIndex"] and selectedR == v["rIndex"] then
+                net.Start("WSEquip")
+                    net.WriteEntity(v["wep"])
+                net.SendToServer()
+                surface.PlaySound("common/wpn_select.wav")
+            end
+        end
+        return true
+
+    end
+
+end
+hook.Add("PlayerBindPress", "WSActivate", WeaponSelection)
+
+-- Drawing
+function DrawCustomHud()
+    
+    local ply = LocalPlayer()
+    if !(ply:Alive()) then return end
+
+    -- Params
+
+    local WSX = ScrW() * .01 -- Weapon Start X
+    local WSY = ScrH() * .01 -- Weapon Start Y
+    local WWidth = ScrW() * .115 -- Weapon Slot Width
+    local WHeight = ScrH() * .03 -- Weapon Slot Height
+
+    local function DrawWeaponBox(CIndex, RIndex, name) -- Column Index, Row Index, name
+
+        -- Params
+        local CPadding = WWidth / 50 -- Column Padding
+        local RPadding = WHeight / 8 -- Row Padding
+
+        local currentX = WSX + (WWidth + CPadding) * CIndex
+        local currentY = WSY + (WHeight + RPadding) * RIndex
+
+        local color
+        if CIndex == selectedC and RIndex == selectedR then color = Color(0,0,0) else color = Color(255,255,255,185) end
+
+        surface.SetDrawColor(Color(0,0,0,185))
+        surface.DrawRect(currentX, currentY, WWidth, WHeight)
+        surface.SetDrawColor(color)
+        surface.DrawOutlinedRect(currentX, currentY, WWidth, WHeight, 3)
+
+        draw.DrawText(
+            name,
+            "HUD_Default",
+            currentX + WWidth / 2,
+            currentY + (WHeight - textSize) / 2,
+            Color(255,255,255,255),
+            TEXT_ALIGN_CENTER,
+            TEXT_ALIGN_BOTTOM
+        )
+
+    end
+    
+    local roundAmmount = 6
+    local barHeight = ScrH() * .03
+    local barWidth = ScrW() * .08
+
+    local iconSize = barHeight * .8
+    local iconPadding = (barHeight - iconSize) / 2
+    local textPadding = iconPadding * 3
+    local barPadding = iconPadding * 4
+
+    -- Health
+    local hX = ScrW() * .005
+    local hY = ScrH() * .96
+    local healthAmmount = ply:Health()
+    local healthScale = math.Clamp( ( ply:Health() / ply:GetMaxHealth() ), 0, 1 )
+
+    draw.RoundedBox(roundAmmount, hX, hY, barWidth, barHeight, Color(0,0,0,138)) -- Back
+    draw.RoundedBox(roundAmmount, hX, hY, healthScale * barWidth, barHeight, Color(255,69,69,152)) -- Main
+    draw.SimpleText( -- Text
+        tostring(healthAmmount),
+        "HUD_Default",
+        hX + iconSize + textPadding,
+        hY + barHeight / 2,
+        Color(255, 255, 255, 255),
+        TEXT_ALIGN_LEFT,
+        TEXT_ALIGN_CENTER
+    )
+
+    -- Icon
+    surface.SetDrawColor(255, 255, 255, 255)
+    surface.SetMaterial(healthMaterial)
+    surface.DrawTexturedRect(hX + iconPadding, hY + iconPadding, iconSize, iconSize)
+
+    -- Armor
+    local aX = hX + barWidth + barPadding
+    local aY = hY
+    local armorAmmount = ply:Armor()
+    local armorScale = math.Clamp( ( ply:Armor() / ply:GetMaxArmor() ), 0, 1 )
+
+    draw.RoundedBox(roundAmmount, aX, aY, barWidth, barHeight, Color(0,0,0,138)) -- Back
+    draw.RoundedBox(roundAmmount, aX, aY, armorScale * barWidth, barHeight, Color(114,114,114, 152)) -- Main
+    draw.SimpleText( -- Text
+        tostring(armorAmmount),
+        "HUD_Default",
+        aX + iconSize + textPadding,
+        aY + barHeight / 2,
+        Color(255, 255, 255, 255),
+        TEXT_ALIGN_LEFT,
+        TEXT_ALIGN_CENTER
+    )
+
+    -- Icon
+    surface.SetDrawColor(255, 255, 255, 255)
+    surface.SetMaterial(armorMaterial)
+    surface.DrawTexturedRect(aX + iconPadding, aY + iconPadding, iconSize, iconSize)
+
+    -- Food
+    local fX = aX + barWidth + barPadding
+    local fY = hY
+    local armorAmmount = 100 --ply:Armor() TODO
+    local armorScale = 1 --math.Clamp( ( ply:Armor() / ply:GetMaxArmor() ), 0, 1 ) TODO
+
+    draw.RoundedBox(roundAmmount, fX, fY, barWidth, barHeight, Color(0,0,0,138)) -- Back
+    draw.RoundedBox(roundAmmount, fX, fY, armorScale * barWidth, barHeight, Color(204,122,45, 152)) -- Main
+    draw.SimpleText( -- Text
+        tostring(armorAmmount),
+        "HUD_Default",
+        fX + iconSize + textPadding,
+        fY + barHeight / 2,
+        Color(255, 255, 255, 255),
+        TEXT_ALIGN_LEFT,
+        TEXT_ALIGN_CENTER
+    )
+
+    -- Icon
+    surface.SetDrawColor(255, 255, 255, 255)
+    surface.SetMaterial(foodMaterial)
+    surface.DrawTexturedRect(fX + iconPadding, fY + iconPadding, iconSize, iconSize)
+
+    -- Ammo
+    local wep = ply:GetActiveWeapon()
+    if IsValid(wep) then 
+        if wep:GetPrimaryAmmoType() ~= -1 then 
+            local ammoX = ScrW() * 0.995
+            local ammoY = hY
+            local currentAmmo = wep:Clip1()
+            local maxAmmo = wep:GetMaxClip1()
+            local ammoLeft = ply:GetAmmoCount( wep:GetPrimaryAmmoType() )
+            local text
+            if currentAmmo ~= -1 then text = tostring(tostring(currentAmmo) .. "/" .. tostring(maxAmmo) .. " - " .. ammoLeft) else text = tostring(ammoLeft) end
+
+            draw.SimpleText(
+                text,
+                "HUD_Ammo",
+                ammoX,        
+                ammoY + barHeight / 2,
+                Color(255, 255, 255, 255),
+                TEXT_ALIGN_RIGHT,
+                TEXT_ALIGN_CENTER
+            )
+        end
+    end
+
+    -- Money
+    local mX = hX
+    local mY = hY - barHeight / 1.2
+    local moneyAmmount = 10 -- TODO
+    local moneyText = markup.Parse("<font=HUD_Shadow><color=255,255,255>Деньги: </color><color=0,192,0>" .. "$" .. moneyAmmount .. "</color></font>")
+    moneyText:Draw(mX, mY, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+
+    -- Job
+    local jX = mX
+    local jY = mY - barHeight / 1.2
+    local job = "TEST" -- TODO
+    local jobText = markup.Parse("<font=HUD_Shadow><color=255,255,255>Профессия: " .. job .. "</color></font>")
+    jobText:Draw(jX, jY, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+
+    -- Weapon Select
+    if CurTime() < WSHideTime and WSVisible then
+        local grid = BuildWeaponGrid()
+        for i, v in pairs(grid) do
+            local CIndex = v["cIndex"]
+            local RIndex = v["rIndex"]
+            local name   = v["name"]
+
+            DrawWeaponBox(CIndex, RIndex, name)
+        end
+    end
+
+end
+hook.Add("HUDPaint", "DrawCustomHUD", DrawCustomHud)

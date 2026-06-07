@@ -1,0 +1,8 @@
+"crp"
+{
+    "title"         "Custom Roleplay"
+    "version"       "0.0.1"
+    "menusystem"    "1"
+
+    "base"          "sandbox"
+}
