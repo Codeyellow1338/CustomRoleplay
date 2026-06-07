@@ -194,7 +194,7 @@ function DrawCustomHud()
 
     end
     
-    local roundAmmount = 6
+    local roundAmount = 6
     local barHeight = ScrH() * .03
     local barWidth = ScrW() * .08
 
@@ -206,13 +206,13 @@ function DrawCustomHud()
     -- Health
     local hX = ScrW() * .005
     local hY = ScrH() * .96
-    local healthAmmount = ply:Health()
+    local healthAmount = ply:Health()
     local healthScale = math.Clamp( ( ply:Health() / ply:GetMaxHealth() ), 0, 1 )
 
-    draw.RoundedBox(roundAmmount, hX, hY, barWidth, barHeight, Color(0,0,0,138)) -- Back
-    draw.RoundedBox(roundAmmount, hX, hY, healthScale * barWidth, barHeight, Color(255,69,69,152)) -- Main
+    draw.RoundedBox(roundAmount, hX, hY, barWidth, barHeight, Color(0,0,0,138)) -- Back
+    draw.RoundedBox(roundAmount, hX, hY, healthScale * barWidth, barHeight, Color(255,69,69,152)) -- Main
     draw.SimpleText( -- Text
-        tostring(healthAmmount),
+        tostring(healthAmount),
         "HUD_Default",
         hX + iconSize + textPadding,
         hY + barHeight / 2,
@@ -229,13 +229,13 @@ function DrawCustomHud()
     -- Armor
     local aX = hX + barWidth + barPadding
     local aY = hY
-    local armorAmmount = ply:Armor()
+    local armorAmount = ply:Armor()
     local armorScale = math.Clamp( ( ply:Armor() / ply:GetMaxArmor() ), 0, 1 )
 
-    draw.RoundedBox(roundAmmount, aX, aY, barWidth, barHeight, Color(0,0,0,138)) -- Back
-    draw.RoundedBox(roundAmmount, aX, aY, armorScale * barWidth, barHeight, Color(114,114,114, 152)) -- Main
+    draw.RoundedBox(roundAmount, aX, aY, barWidth, barHeight, Color(0,0,0,138)) -- Back
+    draw.RoundedBox(roundAmount, aX, aY, armorScale * barWidth, barHeight, Color(114,114,114, 152)) -- Main
     draw.SimpleText( -- Text
-        tostring(armorAmmount),
+        tostring(armorAmount),
         "HUD_Default",
         aX + iconSize + textPadding,
         aY + barHeight / 2,
@@ -252,13 +252,13 @@ function DrawCustomHud()
     -- Food
     local fX = aX + barWidth + barPadding
     local fY = hY
-    local armorAmmount = 100 --ply:Armor() TODO
-    local armorScale = 1 --math.Clamp( ( ply:Armor() / ply:GetMaxArmor() ), 0, 1 ) TODO
+    local foodAmount = ply:GetHunger()
+    local foodScale = math.Clamp( ( ply:GetHunger() / 100 ), 0, 1 )
 
-    draw.RoundedBox(roundAmmount, fX, fY, barWidth, barHeight, Color(0,0,0,138)) -- Back
-    draw.RoundedBox(roundAmmount, fX, fY, armorScale * barWidth, barHeight, Color(204,122,45, 152)) -- Main
+    draw.RoundedBox(roundAmount, fX, fY, barWidth, barHeight, Color(0,0,0,138)) -- Back
+    draw.RoundedBox(roundAmount, fX, fY, foodScale * barWidth, barHeight, Color(204,122,45, 152)) -- Main
     draw.SimpleText( -- Text
-        tostring(armorAmmount),
+        tostring(foodAmount),
         "HUD_Default",
         fX + iconSize + textPadding,
         fY + barHeight / 2,
@@ -299,14 +299,14 @@ function DrawCustomHud()
     -- Money
     local mX = hX
     local mY = hY - barHeight / 1.2
-    local moneyAmmount = 10 -- TODO
-    local moneyText = markup.Parse("<font=HUD_Shadow><color=255,255,255>Деньги: </color><color=0,192,0>" .. "$" .. moneyAmmount .. "</color></font>")
+    local moneyAmount = ply:GetMoney()
+    local moneyText = markup.Parse("<font=HUD_Shadow><color=255,255,255>Деньги: </color><color=0,192,0>" .. "$" .. moneyAmount .. "</color></font>")
     moneyText:Draw(mX, mY, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 
     -- Job
     local jX = mX
     local jY = mY - barHeight / 1.2
-    local job = "TEST" -- TODO
+    local job = ply:GetJob()
     local jobText = markup.Parse("<font=HUD_Shadow><color=255,255,255>Профессия: " .. job .. "</color></font>")
     jobText:Draw(jX, jY, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 

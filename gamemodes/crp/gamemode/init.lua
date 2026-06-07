@@ -1,12 +1,18 @@
 -- VGUI
 AddCSLuaFile("vgui/cl_hide.lua")
 AddCSLuaFile("vgui/cl_customhud.lua")
+
+include("vgui/customhud.lua")
+-- PlayerData
+AddCSLuaFile("playerdata/playermeta.lua")
+
+include("playerdata/datainitializer.lua")
+include("playerdata/playermeta.lua")
 -- Others
 AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
 
 include("shared.lua")
-include("vgui/customhud.lua")
 
 function GM:PlayerSpawn(ply)
     ply:SetWalkSpeed(200)
