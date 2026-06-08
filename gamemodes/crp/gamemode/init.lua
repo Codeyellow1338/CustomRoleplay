@@ -1,6 +1,7 @@
 -- VGUI
 AddCSLuaFile("vgui/cl_hide.lua")
 AddCSLuaFile("vgui/cl_customhud.lua")
+AddCSLuaFile("vgui/cl_syncinventory.lua")
 
 include("vgui/customhud.lua")
 -- PlayerData
@@ -11,7 +12,9 @@ include("playerdata/playermeta.lua")
 -- Mechanics
 AddCSLuaFile("mechanics/cl_hunger.lua")
 
-include("mechanincs/hunger.lua")
+include("mechanics/hunger.lua")
+-- Anticheat
+include("anticheat/inventory.lua")
 -- Others
 AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
@@ -30,3 +33,6 @@ function GM:PlayerSpawn(ply)
 
     ply:SetupHands()
 end
+
+util.AddNetworkString("CRP_InitializeInventory")
+util.AddNetworkString("CRP_SyncInventory")

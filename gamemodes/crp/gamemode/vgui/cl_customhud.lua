@@ -28,6 +28,14 @@ surface.CreateFont("HUD_Shadow", {
     shadow = true,
 })
 
+surface.CreateFont("HUD_Inventory", {
+    font = "Arial",
+    size = textSize / 1.25,
+    weight = 600,
+    antialias = true,
+    shadow = true
+})
+
 -- Others
 function GetSortedWeapons()
 
@@ -322,29 +330,142 @@ function DrawCustomHud()
         end
     end
 
-    -- Inventory 6 x 3
-    local cellSize = ScrW() * .03
-    local cellPadding = cellSize / 20
-    local InvX = ScrW() * .5 - cellSize * 3 - cellPadding * 2.5
-    local InvY = ScrH() - cellSize * 3 - cellPadding * 2
-
-    local function DrawInventoryCell(CIndex, RIndex)
-
-        local currentX = InvX + (cellSize + cellPadding) * CIndex
-        local currentY = InvY + (cellSize + cellPadding) * RIndex
-
-        surface.SetDrawColor(0,0,0,185)
-        surface.DrawRect(currentX, currentY, cellSize, cellSize)
-        surface.SetDrawColor(255, 255, 255, 185)
-        surface.DrawOutlinedRect(currentX, currentY, cellSize, cellSize, 3)
-
-    end
-
-    for c = 0, 5, 1 do
-        for r = 0, 2, 1 do
-            DrawInventoryCell(c, r)
-        end
-    end
-
 end
 hook.Add("HUDPaint", "DrawCustomHUD", DrawCustomHud)
+
+
+-- Custom C Menu
+CRP_InventoryFrame = nil
+function DrawCMenu()
+
+    if !IsValid(CRP_InventoryFrame) then
+
+        -- Inv Background
+        local BgW = ScrW() * .2
+        local BgH = ScrH() * .2
+
+        local BgX = ScrW() * .5 - BgW * .5
+        local BgY = ScrH() - BgH
+
+        CRP_InventoryFrame = vgui.Create("DFrame")
+        CRP_InventoryFrame:SetPos(BgX, BgY)
+        CRP_InventoryFrame:MakePopup()
+        CRP_InventoryFrame:SetDraggable(false)
+        CRP_InventoryFrame:SetTitle("")
+        CRP_InventoryFrame:ShowCloseButton(false)
+        CRP_InventoryFrame.Paint = function(self, w, h) 
+            surface.SetDrawColor(0,0,0,185)
+            surface.DrawRect(0, 0, w, h)
+            surface.SetDrawColor(255,255,255,185)
+            surface.DrawOutlinedRect(0, 0, w, h, 3)
+        end
+
+        -- Inv Cells
+        local cellsPerRow = 6
+        local cellsPerColumn = 3
+        local space = 4
+        local cellSize = (BgW - space * (cellsPerRow + 1)) / cellsPerRow -- BgW = cellSize * cellsPerRow + space * (cellsPerRow + 1) -> cellSize = (BgW - space * (cellsPerRow + 1)) / cellsPerRow
+        local BgH = cellSize * cellsPerColumn + space * (cellsPerColumn + 1)
+        CRP_InventoryFrame:SetSize(BgW,BgH)
+
+        local InvGrid = vgui.Create("DIconLayout", CRP_InventoryFrame)
+        CRP_InventoryFrame.Grid = InvGrid
+        InvGrid:Dock(FILL)
+        InvGrid:DockMargin(0, -24, 0, -5)
+        InvGrid:SetSpaceX(space)
+        InvGrid:SetSpaceY(space)
+
+        local function DrawInvCell(i)
+
+            local cell = InvGrid:Add("DPanel")
+            cell.SlotIndex = i
+            cell:SetSize(cellSize, cellSize)
+            cell.Paint = function(self, w, h)
+                surface.SetDrawColor(0,0,0,185)
+                surface.DrawRect(0, 0, w, h)
+                surface.SetDrawColor(255, 255, 255, 185)
+                surface.DrawOutlinedRect(0, 0, w, h, 3)
+            end
+            cell:Receiver("InvItems", function(self, droppedPanels, bDoDrop, command, x, y)
+                local item = droppedPanels[1]
+
+                local fromSlot = item.SlotIndex
+                local toSlot = self.SlotIndex
+
+                if bDoDrop then
+                    
+                    net.Start("CRP_MoveItemRequest")
+                        net.WriteInt(fromSlot, 8)
+                        net.WriteInt(toSlot, 8)
+                    net.SendToServer()
+                end
+            end)
+            cell:SetVisible(true)
+
+            return cell
+
+        end
+
+        CRP_InventoryFrame:SetVisible(true)
+
+        -- Refreshing inventory
+        function CRP_InventoryFrame:Refresh()
+
+            if !(IsValid(self.Grid)) then return end
+            self.Grid:Clear()
+
+            local items = LocalPlayer().LocalInventory
+
+            for slot, item in pairs(items) do
+
+                local amount = item["amount"]
+                local name = item["name"]
+                local model = item["model"]
+                local cell = DrawInvCell(slot)
+
+                if (name ~= "empty") and (amount ~= 0) then
+                    local icon = vgui.Create("SpawnIcon", cell)
+                    icon:Dock(FILL)
+                    icon:SetModel(model)
+                    icon.SlotIndex = slot
+                    icon:Droppable("InvItems")
+                    icon:SetTooltip(nil)
+                    function icon:PaintOver(w, h)
+                        if amount ~= 0 then
+                            surface.SetFont("HUD_Inventory")
+                            local ts = surface.GetTextSize("x" .. tostring(amount))
+
+                            draw.SimpleText(
+                                "x" .. tostring(amount),
+                                "HUD_Inventory",
+                                w - ts,
+                                h - textSize / 2.5,
+                                Color(255, 255, 255, 255),
+                                TEXT_ALIGN_LEFT,
+                                TEXT_ALIGN_CENTER
+                            )
+                        end
+                    end
+                end
+            end
+        end
+            
+        CRP_InventoryFrame:Refresh()
+
+    else
+
+        CRP_InventoryFrame:SetVisible(true)
+        CRP_InventoryFrame:Refresh()
+
+    end
+
+    return false
+end
+hook.Add("ContextMenuOpen", "DrawCustomCMenu", DrawCMenu)
+
+function CloseCMenu()
+    if IsValid(CRP_InventoryFrame) then
+        CRP_InventoryFrame:SetVisible(false)
+    end
+end
+hook.Add("OnContextMenuClose", "CloseCustomCMenu", CloseCMenu)

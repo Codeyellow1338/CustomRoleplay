@@ -1,8 +1,9 @@
+-- PlayerData
+include("playerdata/playermeta.lua")
 -- VGUI
 include("vgui/cl_hide.lua")
 include("vgui/cl_customhud.lua")
--- PlayerData
-include("playerdata/playermeta.lua")
+include("vgui/cl_syncinventory.lua")
 -- Mechanics
 include("mechanics/cl_hunger.lua")
 -- Others
@@ -11,3 +12,7 @@ include("shared.lua")
 function GM:Initialize()
     
 end
+hook.Add("InitPostEntity", "InitializeInventory", function() 
+    net.Start("CRP_InitializeInventory")
+    net.SendToServer()
+end)

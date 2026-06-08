@@ -28,6 +28,15 @@ function ply:SetHunger(amount)
     self:SetNW2Int("CRP_Hunger", math.max(0, amount))
 end
 
-function ply:GetInv() -- TODO
+function ply:GetInventory() -- CALL THIS ON SERVER ONLY !!!
     return self.CRPData.Inventory
+end
+
+function ply:SyncInventory()
+    local inv = self.CRPData.Inventory
+    inv = util.TableToJSON(inv)
+
+    net.Start("CRP_SyncInventory")
+        net.WriteString(inv)
+    net.Send(self)
 end
