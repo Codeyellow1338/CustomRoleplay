@@ -15,10 +15,10 @@ function Initialize(ply)
         initialMoney = 5000
         initialInventory = {}
         for i = 1, 18 do
-            if i ~= 6 then initialInventory[i] = {["name"] = "empty", ["amount"] = 0, ["model"] = "none"} continue end
-            initialInventory[i] = {["name"] = "medkit", ["amount"] = 1, ["model"] = "models/weapons/w_medkit.mdl"}
+            if i ~= 6 then initialInventory[i] = {["name"] = "empty", ["amount"] = 0, ["model"] = "none", ["item"] = "N/A"} continue end
         end
     end
+    initialInventory[6] = {["name"] = "medkit", ["amount"] = 1, ["model"] = "models/weapons/w_medkit.mdl", ["item"] = "weapon_medkit"}
     ply.CRPData = {
         Money           = initialMoney,
         Salary          = 45,

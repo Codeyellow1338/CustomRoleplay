@@ -36,6 +36,41 @@ surface.CreateFont("HUD_Inventory", {
     shadow = true
 })
 
+hook.Add("OnScreenSizeChanged", "ChangeTextSize", function() 
+    textSize = ScrH() * .025
+
+    surface.CreateFont("HUD_Default", {
+        font = "Arial",
+        size = textSize,
+        weight = 800,
+        antialias = true
+    })
+
+    surface.CreateFont("HUD_Ammo", {
+        font = "Arial",
+        size = textSize * 1.25,
+        weight = 800,
+        antialias = true,
+        shadow = true
+    })
+
+    surface.CreateFont("HUD_Shadow", {
+        font = "Arial",
+        size = textSize,
+        weight = 600,
+        antialias = true,
+        shadow = true,
+    })
+
+    surface.CreateFont("HUD_Inventory", {
+        font = "Arial",
+        size = textSize / 1.25,
+        weight = 600,
+        antialias = true,
+        shadow = true
+    })
+end)
+
 -- Others
 function GetSortedWeapons()
 
@@ -336,16 +371,20 @@ hook.Add("HUDPaint", "DrawCustomHUD", DrawCustomHud)
 
 -- Custom C Menu
 CRP_InventoryFrame = nil
+hook.Add("OnScreenSizeChanged", "ChangeInventorySize", function() 
+    if IsValid(CRP_InventoryFrame) then CRP_InventoryFrame:Close() end
+end)
 function DrawCMenu()
 
     if !IsValid(CRP_InventoryFrame) then
 
-        -- Inv Background
         local BgW = ScrW() * .2
         local BgH = ScrH() * .2
 
         local BgX = ScrW() * .5 - BgW * .5
         local BgY = ScrH() - BgH
+
+        -- Inv Background
 
         CRP_InventoryFrame = vgui.Create("DFrame")
         CRP_InventoryFrame:SetPos(BgX, BgY)
@@ -363,15 +402,16 @@ function DrawCMenu()
         -- Inv Cells
         local cellsPerRow = 6
         local cellsPerColumn = 3
-        local space = 4
-        local cellSize = (BgW - space * (cellsPerRow + 1)) / cellsPerRow -- BgW = cellSize * cellsPerRow + space * (cellsPerRow + 1) -> cellSize = (BgW - space * (cellsPerRow + 1)) / cellsPerRow
+        local space = ScrW() * 0.0025
+        local cellSize = (BgW - space * (cellsPerRow + 3)) / cellsPerRow
         local BgH = cellSize * cellsPerColumn + space * (cellsPerColumn + 1)
         CRP_InventoryFrame:SetSize(BgW,BgH)
 
         local InvGrid = vgui.Create("DIconLayout", CRP_InventoryFrame)
         CRP_InventoryFrame.Grid = InvGrid
         InvGrid:Dock(FILL)
-        InvGrid:DockMargin(0, -24, 0, -5)
+        InvGrid:DockMargin(0, -28, -5, -5)
+        InvGrid:SetBorder(space)
         InvGrid:SetSpaceX(space)
         InvGrid:SetSpaceY(space)
 
@@ -384,7 +424,7 @@ function DrawCMenu()
                 surface.SetDrawColor(0,0,0,185)
                 surface.DrawRect(0, 0, w, h)
                 surface.SetDrawColor(255, 255, 255, 185)
-                surface.DrawOutlinedRect(0, 0, w, h, 3)
+                surface.DrawOutlinedRect(0, 0, w, h, 2)
             end
             cell:Receiver("InvItems", function(self, droppedPanels, bDoDrop, command, x, y)
                 local item = droppedPanels[1]
@@ -425,7 +465,9 @@ function DrawCMenu()
 
                 if (name ~= "empty") and (amount ~= 0) then
                     local icon = vgui.Create("SpawnIcon", cell)
-                    icon:Dock(FILL)
+                    --icon:Dock(FILL)
+                    icon:SetSize(cellSize * .9, cellSize * .9)
+                    icon:Center()
                     icon:SetModel(model)
                     icon.SlotIndex = slot
                     icon:Droppable("InvItems")
@@ -445,6 +487,95 @@ function DrawCMenu()
                                 TEXT_ALIGN_CENTER
                             )
                         end
+                    end
+
+                    -- RMB Menu on click
+                    local RMBMenu
+                    icon.DoRightClick = function()
+                        
+                        if !(IsValid(RMBMenu)) then
+                            RMBMenu = vgui.Create("DFrame")
+                            local mW = ScrW() * .1
+                            local mH = ScrH() * .2
+
+                            local x, y = input.GetCursorPos()
+
+                            -- Main Window
+                            RMBMenu:SetSize(mW, mH)
+                            RMBMenu:MakePopup()
+                            RMBMenu:SetPos(x, y - mH * 1.25)
+                            RMBMenu:SetDraggable(false)
+                            RMBMenu:SetTitle("")
+                            RMBMenu:ShowCloseButton(true)
+                            RMBMenu.Paint = function(self, w, h) 
+                                surface.SetDrawColor(0,0,0,185)
+                                surface.DrawRect(0,0,w,h)
+                                surface.SetDrawColor(255,255,255,185)
+                                surface.DrawOutlinedRect(0,0,w,h,3)
+                            end
+                            RMBMenu.Think = function(self)
+                                if !(IsValid(CRP_InventoryFrame)) or !(CRP_InventoryFrame:IsVisible()) then self:Remove() end
+                            end
+                            RMBMenu:SetVisible(true)
+
+                            -- Grid
+                            local buttonGrid = vgui.Create("DIconLayout", RMBMenu)
+                            buttonGrid:Dock(FILL)
+                            buttonGrid:SetSpaceX(space)
+                            buttonGrid:SetSpaceY(space)
+                            buttonGrid:DockMargin(-5, 0, -5, 0)
+
+                            local bW = mW
+                            local bH = mH * .2
+                            local item = LocalPlayer().LocalInventory[icon.SlotIndex]
+
+                            -- Making button
+                            local function CreateButton(text)
+                                local button = vgui.Create("DButton", buttonGrid)
+                                button:SetSize(bW, bH)
+                                button.Paint = function(self, w, h)
+                                    surface.SetDrawColor(0,0,0,185)
+                                    surface.DrawRect(0,0,w,h)
+                                    surface.SetDrawColor(255,255,255,185)
+                                    surface.DrawOutlinedRect(0,0,w,h,2)
+                                end
+                                button:SetVisible(true)
+                                button:SetTextColor(Color(255,255,255,255))
+                                button:SetFont("HUD_Inventory")
+                                button:SetText(text)
+                                button.OnCursorEntered = function()
+                                    button:SetTextColor(Color(189,189,189))
+                                    surface.PlaySound("buttons/lightswitch2.wav")
+                                end
+                                button.OnCursorExited = function()
+                                    button:SetTextColor(Color(255,255,255,255))
+                                end
+
+                                return button
+                            end
+
+                            -- Drop
+                            local dropB = CreateButton("Выбросить")
+                            dropB.DoClick = function()
+                                surface.PlaySound("buttons/button14.wav")
+                                net.Start("CRP_DropItemRequest")
+                                    net.WriteInt(icon.SlotIndex, 8)
+                                net.SendToServer()
+                            end
+
+                            -- Use (for weapons)
+                            if weapons.Get(item["item"]) then
+                                local useB = CreateButton("Использовать")
+                                useB.DoClick = function()
+                                    surface.PlaySound("buttons/button14.wav")
+                                    net.Start("CRP_UseItemRequest")
+                                        net.WriteInt(icon.SlotIndex, 8)
+                                    net.SendToServer()
+                                end
+                            end
+
+                        end
+
                     end
                 end
             end

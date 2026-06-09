@@ -10,8 +10,6 @@ AddCSLuaFile("playerdata/playermeta.lua")
 include("playerdata/datainitializer.lua")
 include("playerdata/playermeta.lua")
 -- Mechanics
-AddCSLuaFile("mechanics/cl_hunger.lua")
-
 include("mechanics/hunger.lua")
 -- Anticheat
 include("anticheat/inventory.lua")
