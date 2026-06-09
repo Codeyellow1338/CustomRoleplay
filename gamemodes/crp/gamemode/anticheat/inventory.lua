@@ -23,7 +23,6 @@ end)
         ["name"]    = "empty",
         ["amount"]  = 0,
         ["model"]   = "none",
-        ["item"] = "N/A"
     }
 
 util.AddNetworkString("CRP_DropItemRequest")
@@ -39,8 +38,9 @@ net.Receive("CRP_DropItemRequest", function(len, ply)
 
     local itemData = plyInv[fromSlot]
     itemData["amount"] = itemData["amount"] - 1
-    local worldItem = ents.Create(itemData["item"])
+    local worldItem = ents.Create(itemData["name"])
     worldItem:SetPos(ply:GetPos() + ply:GetForward() * 100 + Vector(0, 0, 20))
+    worldItem.WasDropped = true
     worldItem:Spawn()
 
     if itemData["amount"] == 0 then plyInv[fromSlot] = defaultSlot end
@@ -61,7 +61,7 @@ net.Receive("CRP_UseItemRequest", function(len, ply)
 
     local itemData = plyInv[fromSlot]
     itemData["amount"] = itemData["amount"] - 1
-    ply:Give(itemData["item"])
+    ply:Give(itemData["name"])
 
     if itemData["amount"] == 0 then plyInv[fromSlot] = defaultSlot end
     ply:SyncInventory()

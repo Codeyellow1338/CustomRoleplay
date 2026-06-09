@@ -36,6 +36,14 @@ surface.CreateFont("HUD_Inventory", {
     shadow = true
 })
 
+surface.CreateFont("HUD_InteractionMenu", {
+    font = "Arial",
+    size = textSize / 1.5,
+    weight = 600,
+    antialias = true,
+    shadow = true
+})
+
 hook.Add("OnScreenSizeChanged", "ChangeTextSize", function() 
     textSize = ScrH() * .025
 
@@ -69,6 +77,15 @@ hook.Add("OnScreenSizeChanged", "ChangeTextSize", function()
         antialias = true,
         shadow = true
     })
+
+    surface.CreateFont("HUD_InteractionMenu", {
+        font = "Arial",
+        size = textSize / 1.5,
+        weight = 600,
+        antialias = true,
+        shadow = true
+    })
+
 end)
 
 -- Others
@@ -371,11 +388,14 @@ hook.Add("HUDPaint", "DrawCustomHUD", DrawCustomHud)
 
 -- Custom C Menu
 CRP_InventoryFrame = nil
+local CRP_InteractionsFrame
+
 hook.Add("OnScreenSizeChanged", "ChangeInventorySize", function() 
     if IsValid(CRP_InventoryFrame) then CRP_InventoryFrame:Close() end
 end)
 function DrawCMenu()
 
+    -- Inventory
     if !IsValid(CRP_InventoryFrame) then
 
         local BgW = ScrW() * .2
@@ -393,7 +413,7 @@ function DrawCMenu()
         CRP_InventoryFrame:SetTitle("")
         CRP_InventoryFrame:ShowCloseButton(false)
         CRP_InventoryFrame.Paint = function(self, w, h) 
-            surface.SetDrawColor(0,0,0,185)
+            surface.SetDrawColor(41,41,41,185)
             surface.DrawRect(0, 0, w, h)
             surface.SetDrawColor(255,255,255,185)
             surface.DrawOutlinedRect(0, 0, w, h, 3)
@@ -421,7 +441,7 @@ function DrawCMenu()
             cell.SlotIndex = i
             cell:SetSize(cellSize, cellSize)
             cell.Paint = function(self, w, h)
-                surface.SetDrawColor(0,0,0,185)
+                surface.SetDrawColor(41,41,41,185)
                 surface.DrawRect(0, 0, w, h)
                 surface.SetDrawColor(255, 255, 255, 185)
                 surface.DrawOutlinedRect(0, 0, w, h, 2)
@@ -564,7 +584,8 @@ function DrawCMenu()
                             end
 
                             -- Use (for weapons)
-                            if weapons.Get(item["item"]) then
+                            local hl2WeaponsList = {"weapon_357", "weapon_ar2", "weapon_bugbait", "weapon_crossbow", "weapon_crowbar", "weapon_frag", "weapon_pistol", "weapon_rpg", "weapon_shotgun", "weapon_slam", "weapon_smg1", "weapon_stunstick"}
+                            if weapons.Get(item["name"]) || table.HasValue(hl2WeaponsList, item["name"]) then
                                 local useB = CreateButton("Использовать")
                                 useB.DoClick = function()
                                     surface.PlaySound("buttons/button14.wav")
@@ -573,9 +594,7 @@ function DrawCMenu()
                                     net.SendToServer()
                                 end
                             end
-
                         end
-
                     end
                 end
             end
@@ -590,6 +609,77 @@ function DrawCMenu()
 
     end
 
+    -- Interactions Menu
+
+    -- Main Frame
+    local LSW = ScrW() * .1
+    local LSH = ScrH() * .5
+
+    CRP_InteractionsFrame = vgui.Create("DFrame")
+    CRP_InteractionsFrame:SetSize(LSW, LSH)
+    CRP_InteractionsFrame:SetPos(0, ScrH() * .5 - LSH / 2)
+    CRP_InteractionsFrame:SetTitle("")
+    CRP_InteractionsFrame:ShowCloseButton(false)
+    CRP_InteractionsFrame:SetDraggable(false)
+    CRP_InteractionsFrame.Paint = function(self, w, h)
+        surface.SetDrawColor(41,41,41,168)
+        surface.DrawRect(0,0,w,h)
+        surface.SetDrawColor(255,255,255,168)
+        surface.DrawOutlinedRect(0,0,w,h,3)
+    end
+
+    -- Grid
+    local buttonsGrid = vgui.Create("DListLayout", CRP_InteractionsFrame)
+    buttonsGrid:Dock(FILL)
+    buttonsGrid:DockMargin(0, 0, 0, -5)
+
+    -- Buttons
+    local buttonSizeH = LSH * .05
+    local function DrawInteractionButton(text)
+
+        local button = vgui.Create("DButton", buttonsGrid)
+        button:Dock(TOP)
+        button:SetTall(buttonSizeH)
+        button:DockMargin(0, 0, 0, buttonSizeH / 3)
+        button.Paint = function(self, w, h)
+            surface.SetDrawColor(41,41,41,168)
+            surface.DrawRect(0,0,w,h)
+            surface.SetDrawColor(255,255,255,168)
+            surface.DrawOutlinedRect(0,0,w,h,2)
+        end
+        button:SetFont("HUD_InteractionMenu")
+        button:SetTextColor(Color(255, 255, 255, 255))
+        button:SetText(text)
+        button.OnCursorEntered = function()
+            button:SetTextColor(Color(189,189,189))
+            surface.PlaySound("buttons/lightswitch2.wav")
+        end
+        button.OnCursorExited = function()
+            button:SetTextColor(Color(255,255,255,255))
+        end
+
+        return button
+
+    end
+
+    -- Drop Weapon Button
+    local DWB = DrawInteractionButton("Выкинуть оружие")
+    DWB.DoClick = function()
+        local BannedWeapons = {
+            "weapon_fists",
+            "weapon_physgun",
+            "weapon_physcannon",
+            "gmod_tool"
+        }
+        local currentWeapon = LocalPlayer():GetActiveWeapon()
+        if !IsValid(currentWeapon) then return end
+        if table.HasValue(BannedWeapons, currentWeapon:GetClass()) then return end
+
+        net.Start("CRP_DropWeaponRequest")
+            net.WriteString(currentWeapon:GetClass())
+        net.SendToServer()
+    end
+
     return false
 end
 hook.Add("ContextMenuOpen", "DrawCustomCMenu", DrawCMenu)
@@ -597,6 +687,9 @@ hook.Add("ContextMenuOpen", "DrawCustomCMenu", DrawCMenu)
 function CloseCMenu()
     if IsValid(CRP_InventoryFrame) then
         CRP_InventoryFrame:SetVisible(false)
+    end
+    if IsValid(CRP_InteractionsFrame) then
+        CRP_InteractionsFrame:Close()
     end
 end
 hook.Add("OnContextMenuClose", "CloseCustomCMenu", CloseCMenu)

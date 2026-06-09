@@ -10,9 +10,14 @@ AddCSLuaFile("playerdata/playermeta.lua")
 include("playerdata/datainitializer.lua")
 include("playerdata/playermeta.lua")
 -- Mechanics
+AddCSLuaFile("mechanics/cl_storeitem.lua")
+
+include("mechanics/stopautopickup.lua")
+include("mechanics/storeitem.lua")
 include("mechanics/hunger.lua")
 -- Anticheat
 include("anticheat/inventory.lua")
+include("anticheat/interactionmenu.lua")
 -- Others
 AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
