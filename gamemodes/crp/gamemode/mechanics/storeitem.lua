@@ -17,7 +17,7 @@ concommand.Add("CRP_storeitem", function(ply, cmd, args)
     for i, v in pairs(ply.CRPData.Inventory) do
         
         if v["name"] == name then foundIndex = i break end
-        if v["name"] == "empty" and !(foundIndex and foundTable) then foundIndex = i end
+        if v["name"] == "empty" and !(foundIndex) then foundIndex = i end
 
     end
 

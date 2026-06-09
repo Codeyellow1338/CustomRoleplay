@@ -665,6 +665,7 @@ function DrawCMenu()
     -- Drop Weapon Button
     local DWB = DrawInteractionButton("Выкинуть оружие")
     DWB.DoClick = function()
+        surface.PlaySound("buttons/button14.wav")
         local BannedWeapons = {
             "weapon_fists",
             "weapon_physgun",
@@ -677,6 +678,33 @@ function DrawCMenu()
 
         net.Start("CRP_DropWeaponRequest")
             net.WriteString(currentWeapon:GetClass())
+        net.SendToServer()
+    end
+
+    -- Buy Current Ammo Button
+    local BCAB = DrawInteractionButton("Купить патроны")
+    BCAB.DoClick = function()
+        surface.PlaySound("buttons/button14.wav")
+        local ammoList = {
+            [1]           = {250, 30},
+            [3]        = {100, 30},
+            [4]          = {200, 30},
+            [5]           = {175, 15},
+            [6]      = {350, 10},
+            [7]      = {175, 30},
+            [8]     = {500, 5}
+        }
+
+        local wep = LocalPlayer():GetActiveWeapon()
+        if !IsValid(wep) then return end
+
+        local ammoType = wep:GetPrimaryAmmoType()
+        print(ammoType)
+        if not ammoList[ammoType] then return end
+
+        net.Start("CRP_AmmoBuyRequest")
+            net.WriteString( ammoType )
+            net.WriteString( util.TableToJSON(ammoList[ammoType]) )
         net.SendToServer()
     end
 

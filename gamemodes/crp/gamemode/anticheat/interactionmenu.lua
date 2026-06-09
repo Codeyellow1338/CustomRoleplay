@@ -28,3 +28,25 @@ net.Receive("CRP_DropWeaponRequest", function(len, ply)
     worldItem:Spawn()
 
 end)
+
+util.AddNetworkString("CRP_AmmoBuyRequest")
+net.Receive("CRP_AmmoBuyRequest", function(len, ply) 
+
+    local ammoType = tonumber(net.ReadString())
+    local request = util.JSONToTable( net.ReadString() )
+    local price, amount = tonumber(request[1]), tonumber(request[2])
+    local ammoList = {
+        [1] = "AR2",
+        [3] = "Pistol",
+        [4] = "SMG1",
+        [5] = "357",
+        [6] = "XBowBolt",
+        [7] = "Buckshot",
+        [8] = "RPG_Round"
+    }
+    ammoType = ammoList[ammoType]
+
+    ply:SetMoney( ply:GetMoney() - price )
+    ply:GiveAmmo(amount, ammoType)
+
+end)

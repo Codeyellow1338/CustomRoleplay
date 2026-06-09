@@ -1,6 +1,6 @@
 function StoreItem()
 
-    if input.IsKeyDown(KEY_LCONTROL) and input.IsKeyDown(KEY_Z) then
+    if input.IsKeyDown(KEY_LCONTROL) and input.IsKeyDown(KEY_F) then
         RunConsoleCommand("CRP_storeitem")
     end
 

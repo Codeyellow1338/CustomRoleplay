@@ -45,7 +45,7 @@ function SyncOnExit(ply)
 
     local steamid = ply.CachedSteamID64 or ply:SteamID64()
     
-    local money = ply.CRPData.Money
+    local money = ply:GetMoney()
     local inventory = ply.CRPData.Inventory
     inventory = util.TableToJSON(inventory)
 

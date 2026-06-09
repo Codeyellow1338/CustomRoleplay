@@ -15,6 +15,7 @@ AddCSLuaFile("mechanics/cl_storeitem.lua")
 include("mechanics/stopautopickup.lua")
 include("mechanics/storeitem.lua")
 include("mechanics/hunger.lua")
+include("mechanics/payday.lua")
 -- Anticheat
 include("anticheat/inventory.lua")
 include("anticheat/interactionmenu.lua")
