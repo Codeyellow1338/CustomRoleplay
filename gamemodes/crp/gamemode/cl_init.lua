@@ -4,6 +4,7 @@ include("playerdata/playermeta.lua")
 include("vgui/cl_hide.lua")
 include("vgui/cl_customhud.lua")
 include("vgui/cl_syncinventory.lua")
+include("vgui/cl_notifications.lua")
 -- Mechanics
 include("mechanics/cl_storeitem.lua")
 -- Others

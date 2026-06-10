@@ -5,47 +5,7 @@ local foodMaterial = Material("vgui/food.png", "nocull smooth")
 
 -- Font
 local textSize = ScrH() * .025
-surface.CreateFont("HUD_Default", {
-    font = "Arial",
-    size = textSize,
-    weight = 800,
-    antialias = true
-})
-
-surface.CreateFont("HUD_Ammo", {
-    font = "Arial",
-    size = textSize * 1.25,
-    weight = 800,
-    antialias = true,
-    shadow = true
-})
-
-surface.CreateFont("HUD_Shadow", {
-    font = "Arial",
-    size = textSize,
-    weight = 600,
-    antialias = true,
-    shadow = true,
-})
-
-surface.CreateFont("HUD_Inventory", {
-    font = "Arial",
-    size = textSize / 1.25,
-    weight = 600,
-    antialias = true,
-    shadow = true
-})
-
-surface.CreateFont("HUD_InteractionMenu", {
-    font = "Arial",
-    size = textSize / 1.5,
-    weight = 600,
-    antialias = true,
-    shadow = true
-})
-
-hook.Add("OnScreenSizeChanged", "ChangeTextSize", function() 
-    textSize = ScrH() * .025
+local function CreateFonts()
 
     surface.CreateFont("HUD_Default", {
         font = "Arial",
@@ -85,6 +45,22 @@ hook.Add("OnScreenSizeChanged", "ChangeTextSize", function()
         antialias = true,
         shadow = true
     })
+
+    surface.CreateFont("HUD_Notification", {
+        font = "Arial",
+        size = textSize,
+        weight = 800,
+        antialias = true,
+        shadow = true
+    })
+
+end
+CreateFonts()
+
+hook.Add("OnScreenSizeChanged", "ChangeTextSize", function() 
+    textSize = ScrH() * .025
+
+    CreateFonts()
 
 end)
 
@@ -721,3 +697,53 @@ function CloseCMenu()
     end
 end
 hook.Add("OnContextMenuClose", "CloseCustomCMenu", CloseCMenu)
+
+-- Notifications
+local CRP_NotificationFrame
+local NotificationGrid
+notification.AddLegacy = function(text, type, length)
+
+    -- BG holder
+    local NFW = ScrW() * .2
+    local NFH = ScrH() * .9
+
+    local NotifyH = NFH / 20
+    if !(IsValid(CRP_NotificationFrame)) then
+
+        local NFX = ScrW() * .8
+        local NFY = ScrH() * .1
+
+        CRP_NotificationFrame = vgui.Create("DFrame")
+        CRP_NotificationFrame:SetDraggable(false)
+        CRP_NotificationFrame:ShowCloseButton(false)
+        CRP_NotificationFrame:SetTitle("")
+        CRP_NotificationFrame:SetPos(NFX, NFY)
+        CRP_NotificationFrame:SetSize(NFW, NFH)
+        CRP_NotificationFrame.Paint = function(self, w, h)
+            surface.SetDrawColor(255,255,255,0)
+            surface.DrawRect(0,0,w,h)
+        end
+
+        NotificationGrid = vgui.Create("DListLayout", CRP_NotificationFrame)
+        NotificationGrid:Dock(FILL)
+
+    end
+
+    -- Notifications
+    local Notify = vgui.Create("DLabel", NotificationGrid)
+    Notify:Dock(BOTTOM)
+    Notify:DockMargin(0, 0, 0, NotifyH * 0.0001)
+    Notify:SetTall(NotifyH)
+    Notify:SetText(text)
+    Notify:SetFont("HUD_InteractionMenu")
+    Notify:SetContentAlignment(5)
+    Notify.Paint = function(self, w, h)
+        surface.SetDrawColor(41,41,41,168)
+        surface.DrawRect(0,0,w,h)
+        surface.SetDrawColor(255,255,255,168)
+        surface.DrawOutlinedRect(0,0,w,h,2)
+    end
+
+    timer.Simple(1.5, function() Notify:Remove() end)
+
+end

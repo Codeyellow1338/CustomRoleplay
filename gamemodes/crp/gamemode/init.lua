@@ -2,6 +2,7 @@
 AddCSLuaFile("vgui/cl_hide.lua")
 AddCSLuaFile("vgui/cl_customhud.lua")
 AddCSLuaFile("vgui/cl_syncinventory.lua")
+AddCSLuaFile("vgui/cl_notifications.lua")
 
 include("vgui/customhud.lua")
 -- PlayerData
@@ -40,3 +41,4 @@ end
 
 util.AddNetworkString("CRP_InitializeInventory")
 util.AddNetworkString("CRP_SyncInventory")
+util.AddNetworkString("CRP_Notification")

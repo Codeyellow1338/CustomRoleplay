@@ -5,6 +5,9 @@ function Hunger(ply)
 
     local hungerAmount = 2.5
     if ply:GetHunger() - hungerAmount < 0 then
+        net.Start("CRP_Notification")
+            net.WriteString("Вы очень голодны")
+        net.Send(ply)
         ply:TakeDamage(15)
     else
         ply:SetHunger( ply:GetHunger() - hungerAmount )
