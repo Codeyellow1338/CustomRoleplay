@@ -662,26 +662,126 @@ function DrawCMenu()
     BCAB.DoClick = function()
         surface.PlaySound("buttons/button14.wav")
         local ammoList = {
-            [1]           = {250, 30},
-            [3]        = {100, 30},
-            [4]          = {200, 30},
-            [5]           = {175, 15},
-            [6]      = {350, 10},
-            [7]      = {175, 30},
-            [8]     = {500, 5}
+            [1]             = {250, 30},
+            [3]             = {100, 30},
+            [4]             = {200, 30},
+            [5]             = {175, 15},
+            [6]             = {350, 10},
+            [7]             = {175, 30},
+            [8]             = {500, 5}
         }
 
         local wep = LocalPlayer():GetActiveWeapon()
         if !IsValid(wep) then return end
 
         local ammoType = wep:GetPrimaryAmmoType()
-        print(ammoType)
         if not ammoList[ammoType] then return end
 
         net.Start("CRP_AmmoBuyRequest")
             net.WriteString( ammoType )
             net.WriteString( util.TableToJSON(ammoList[ammoType]) )
         net.SendToServer()
+    end
+
+    local function DrawAdditionalWindow(text, callback)
+
+        local WW = ScrW() * .1
+        local WH = ScrH() * .1
+
+        local window = vgui.Create("DFrame")
+        window:SetDraggable(false)
+        window:SetTitle("")
+        window:SetSize(WW, WH)
+        window:Center()
+        window:MakePopup()
+        window.Paint = function(self, w, h)
+            surface.SetDrawColor(41,41,41,168)
+            surface.DrawRect(0,0,w,h)
+            surface.SetDrawColor(255,255,255,168)
+            surface.DrawOutlinedRect(0,0,w,h,3)
+        end
+
+        local textLabel = vgui.Create("DLabel", window)
+        textLabel:Dock(TOP)
+        textLabel:SetFont("HUD_InteractionMenu")
+        textLabel:SetText(text)
+        textLabel:SetContentAlignment(5)
+
+        local textEntry = vgui.Create("DTextEntry", window)
+        textEntry:Dock(FILL)
+        textEntry:SetFont("HUD_InteractionMenu")
+        textEntry:SetContentAlignment(5)
+        textEntry.Paint = function(self, w, h)
+            surface.SetDrawColor(41,41,41,168)
+            surface.DrawRect(0,0,w,h)
+            surface.SetDrawColor(255,255,255,168)
+            surface.DrawOutlinedRect(0,0,w,h,2)
+            draw.SimpleText(
+                self:GetText(),
+                "HUD_InteractionMenu",
+                w / 2,
+                h / 2,
+                self:GetTextColor(),
+                TEXT_ALIGN_CENTER,
+                TEXT_ALIGN_CENTER
+            )
+        end
+        textEntry:SetTextColor(Color(255,255,255,255))
+
+        local confirmationButton = vgui.Create("DButton", window)
+        confirmationButton:Dock(BOTTOM)
+        confirmationButton:SetText("")
+        confirmationButton.Paint = function(self, w, h)
+            surface.SetDrawColor(41,41,41,168)
+            surface.DrawRect(0,0,w,h)
+            surface.SetDrawColor(255,255,255,168)
+            surface.DrawOutlinedRect(0,0,w,h,2)
+            draw.SimpleText(
+                "Подтвердить",
+                "HUD_InteractionMenu",
+                w / 2,
+                h / 2,
+                self:GetTextColor(),
+                TEXT_ALIGN_CENTER,
+                TEXT_ALIGN_CENTER
+            )
+        end
+        confirmationButton.DoClick = function()
+            local amount = tonumber( textEntry:GetText() )
+            if !amount then window:Close() return end
+
+            callback(amount)
+            window:Close()
+        end
+
+    end
+
+    -- Drop Money
+    local DMB = DrawInteractionButton("Скинуть деньги")
+    DMB.DoClick = function()
+        surface.PlaySound("buttons/button14.wav")
+        local function RequestMoneyDrop(amount)
+            if amount <= 0 then notification.AddLegacy("Введена неверная сумма!", 1, 1) return end
+            if amount > LocalPlayer():GetMoney() then notification.AddLegacy("Недостаточно средств!", 1, 1) return end
+            net.Start("CRP_DropMoneyRequest")
+                net.WriteInt(amount, 32)
+            net.SendToServer()
+        end
+        DrawAdditionalWindow("Введите сумму", RequestMoneyDrop)
+    end
+
+    -- Give Money
+    local GMB = DrawInteractionButton("Передать деньги")
+    GMB.DoClick = function()
+        surface.PlaySound("buttons/button14.wav")
+        local function RequestMoneyGive(amount)
+            if amount <= 0 then notification.AddLegacy("Введена неверная сумма!", 1, 1) return end
+            if amount > LocalPlayer():GetMoney() then notification.AddLegacy("Недостаточно средств!", 1, 1) return end
+            net.Start("CRP_GiveMoneyRequest")
+                net.WriteInt(amount, 32)
+            net.SendToServer()
+        end
+        DrawAdditionalWindow("Введите сумму", RequestMoneyGive)
     end
 
     return false
@@ -744,6 +844,6 @@ notification.AddLegacy = function(text, type, length)
         surface.DrawOutlinedRect(0,0,w,h,2)
     end
 
-    timer.Simple(1.5, function() Notify:Remove() end)
+    timer.Simple(3, function() Notify:Remove() end)
 
 end
