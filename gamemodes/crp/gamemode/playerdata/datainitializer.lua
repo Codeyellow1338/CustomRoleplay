@@ -21,7 +21,7 @@ function Initialize(ply)
     ply.CRPData = {
         Money           = initialMoney,
         Salary          = 45,
-        Job             = "Гражданин",
+        Job             = "TEAM_CITIZEN",
         Hunger          = 100,
         Inventory       = initialInventory,
 
@@ -31,6 +31,8 @@ function Initialize(ply)
     ply:SetNW2Int("CRP_Salary", ply.CRPData.Salary)
     ply:SetNW2String("CRP_Job", ply.CRPData.Job)
     ply:SetNW2Int("CRP_Hunger", ply.CRPData.Hunger)
+
+    CRP_InitializePlayerOnJob(ply)
 
     print("[CRP DB] Данные для игрока " .. ply:Nick() .. " были успешно инициализированы.")
 

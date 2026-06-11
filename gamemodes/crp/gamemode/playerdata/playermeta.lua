@@ -12,12 +12,18 @@ function ply:GetSalary()
     return self:GetNW2Int("CRP_Salary")
 end
 
+function ply:SetSalary(amount)
+    self:SetNW2Int("CRP_Salary", amount)
+end
+
 function ply:GetJob()
     return self:GetNW2String("CRP_Job")
 end
 
 function ply:SetJob(newJob)
+    if CLIENT then return end
     self:SetNW2String("CRP_Job", newJob)
+    CRP_InitializePlayerOnJob(self)
 end
 
 function ply:GetHunger()

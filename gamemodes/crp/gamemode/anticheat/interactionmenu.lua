@@ -3,6 +3,7 @@ net.Receive("CRP_DropWeaponRequest", function(len, ply)
 
     local gunToDrop = net.ReadString()
     if !(IsValid(ply:GetWeapon(gunToDrop))) then print("[CRP Anticheat] Игрок Имя: " .. ply:Nick() .. " SteamID64: " .. ply:SteamID64() .. " попытался сбросить оружие, которым не обладает") return end
+    if table.HasValue(CRP_JobList[ply:GetJob()]["weapons"], gunToDrop) then return end
     ply:StripWeapon(gunToDrop)
 
     local worldItem = ents.Create(gunToDrop)

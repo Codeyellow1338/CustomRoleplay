@@ -54,6 +54,14 @@ local function CreateFonts()
         shadow = true
     })
 
+    surface.CreateFont("HUD_F4", {
+        font = "Arial",
+        size = textSize * 1.5,
+        weight = 800,
+        antialias = true,
+        shadow = true
+    })
+
 end
 CreateFonts()
 
@@ -65,7 +73,7 @@ hook.Add("OnScreenSizeChanged", "ChangeTextSize", function()
 end)
 
 -- Others
-function GetSortedWeapons()
+local function GetSortedWeapons()
 
     local weps = LocalPlayer():GetWeapons()
 
@@ -342,7 +350,7 @@ function DrawCustomHud()
     -- Job
     local jX = mX
     local jY = mY - barHeight / 1.2
-    local job = ply:GetJob()
+    local job = CRP_JobList[ply:GetJob()]["name"]
     local jobText = markup.Parse("<font=HUD_Shadow><color=255,255,255>Профессия: " .. job .. "</color></font>")
     jobText:Draw(jX, jY, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 
@@ -369,7 +377,7 @@ local CRP_InteractionsFrame
 hook.Add("OnScreenSizeChanged", "ChangeInventorySize", function() 
     if IsValid(CRP_InventoryFrame) then CRP_InventoryFrame:Close() end
 end)
-function DrawCMenu()
+local function DrawCMenu()
 
     -- Inventory
     if !IsValid(CRP_InventoryFrame) then
@@ -788,7 +796,7 @@ function DrawCMenu()
 end
 hook.Add("ContextMenuOpen", "DrawCustomCMenu", DrawCMenu)
 
-function CloseCMenu()
+local function CloseCMenu()
     if IsValid(CRP_InventoryFrame) then
         CRP_InventoryFrame:SetVisible(false)
     end
@@ -847,3 +855,218 @@ notification.AddLegacy = function(text, type, length)
     timer.Simple(3, function() Notify:Remove() end)
 
 end
+
+-- F4 Menu
+local CRP_F4Frame
+local F4CD
+local function DrawF4Menu()
+
+    if F4CD then if CurTime() < F4CD then return end end
+
+    if !IsValid(CRP_F4Frame) then
+
+        local W = ScrW() * .7
+        local H = ScrH() * .65
+
+        -- Main Frame
+        F4CD = CurTime() + 1
+        CRP_F4Frame = vgui.Create("DFrame")
+        CRP_F4Frame:SetPos(
+            (ScrW() - W) / 2,
+            (ScrH() - H) / 2
+        )
+        CRP_F4Frame:SetSize(W, H)
+        CRP_F4Frame:MakePopup()
+        CRP_F4Frame:SetDraggable(false)
+        CRP_F4Frame.Paint = function(self, w, h)
+            surface.SetDrawColor(41,41,41,168)
+            surface.DrawRect(0,0,w,h)
+            surface.SetDrawColor(255,255,255,168)
+            surface.DrawOutlinedRect(0,0,w,h,3)
+        end
+        CRP_F4Frame:SetTitle("Меню")
+
+        -- LeftSide
+        local CLW = W / 6
+        local categoryFrame = vgui.Create("DPanel", CRP_F4Frame)
+        categoryFrame:Dock(LEFT)
+        categoryFrame:SetWide(CLW)
+        categoryFrame.Paint = function(self, w, h)
+            surface.SetDrawColor(41,41,41,168)
+            surface.DrawRect(0,0,w,h)
+            surface.SetDrawColor(255,255,255,168)
+            surface.DrawOutlinedRect(0,0,w,h,2)
+        end
+
+        local categoryList = vgui.Create("DListLayout", categoryFrame)
+        categoryList:Dock(FILL)
+
+        local catSize = H / 18
+        local catPadding = catSize / 5
+
+        -- Top Text
+        local textLabel = vgui.Create("DLabel", categoryList)
+        textLabel:Dock(TOP)
+        textLabel:SetFont("HUD_InteractionMenu")
+        textLabel:SetText("Категории")
+        textLabel:SetTextColor(Color(255,255,255,255))
+        textLabel:SetContentAlignment(5)
+        textLabel:DockMargin(0, catPadding / 2, 0, catPadding)
+
+        local function DrawCategoryButton(text, callback)
+
+            local button = vgui.Create("DButton", categoryList)
+            button:Dock(TOP)
+            button:DockMargin(catPadding,0,catPadding,catPadding)
+            button:SetTall(catSize)
+            button.Paint = function(self, w, h)
+                surface.SetDrawColor(41,41,41,168)
+                surface.DrawRect(0,0,w,h)
+                surface.SetDrawColor(255,255,255,168)
+                surface.DrawOutlinedRect(0,0,w,h,1)
+            end
+            button:SetFont("HUD_InteractionMenu")
+            button:SetText(text)
+            button:SetTextColor(Color(255,255,255,255))
+             button.OnCursorEntered = function()
+            button:SetTextColor(Color(189,189,189))
+                surface.PlaySound("buttons/lightswitch2.wav")
+            end
+            button.OnCursorExited = function()
+                button:SetTextColor(Color(255,255,255,255))
+            end
+            button.DoClick = callback
+
+        end
+
+        -- Right Side
+        -- Main Frame
+        local infoWindow = vgui.Create("DPanel", CRP_F4Frame)
+        infoWindow:Dock(FILL)
+        infoWindow.Paint = function(self, w, h)
+            surface.SetDrawColor(41,41,41,168)
+            surface.DrawRect(0,0,w,h)
+            surface.SetDrawColor(255,255,255,168)
+            surface.DrawOutlinedRect(0,0,w,h,2)
+        end
+        infoWindow:DockMargin(W / 500, 0,0,0)
+
+        -- Job Window
+        local LeftListW = W / 1.9
+
+        local jobLeftList = vgui.Create("DScrollPanel", infoWindow)
+        jobLeftList:SetWide(LeftListW)
+        jobLeftList:Dock(LEFT)
+        jobLeftList:DockMargin(catPadding / 1.75, catPadding / 1.75, catPadding / 1.75, catPadding / 1.75)
+
+        -- Job Info
+        local jobRightInfo = vgui.Create("DListLayout", infoWindow)
+        jobRightInfo:Dock(FILL)
+        jobRightInfo:DockMargin(catPadding / 1.75, catPadding / 1.75, catPadding / 1.75, catPadding / 1.75)
+        jobRightInfo.Paint = function(self, w, h) end
+
+        local function UpdateJobInfo(jobName, jobDesc, jobModel)
+
+            jobRightInfo:Clear()
+
+            local jobNameText = vgui.Create("DLabel", jobRightInfo)
+            jobNameText:SetFont("HUD_F4")
+            jobNameText:SetText(jobName)
+            jobNameText:SetTextColor(Color(255,255,255,255))
+            jobNameText:SetContentAlignment(5)
+            jobNameText:Dock(TOP)
+            jobNameText:SetTall(H / 12)
+
+            local requestJob = vgui.Create("DButton", jobRightInfo)
+            requestJob:Dock(BOTTOM)
+            requestJob:SetTall(H / 12)
+            requestJob.Paint = function(self, w, h)
+                surface.SetDrawColor(41,41,41,168)
+                surface.DrawRect(0,0,w,h)
+                surface.SetDrawColor(255,255,255,168)
+                surface.DrawOutlinedRect(0,0,w,h,2)
+            end
+            requestJob:SetFont("HUD_InteractionMenu")
+            requestJob:SetText("Устроиться")
+            requestJob:SetTextColor(Color(255,255,255,255))
+            requestJob.OnCursorEntered = function()
+                requestJob:SetTextColor(Color(189,189,189))
+                surface.PlaySound("buttons/lightswitch2.wav")
+            end
+            requestJob.OnCursorExited = function()
+                requestJob:SetTextColor(Color(255,255,255,255))
+            end
+
+            local jobDescText = vgui.Create("DLabel", jobRightInfo)
+            jobDescText:SetFont("HUD_InteractionMenu")
+            jobDescText:SetText(jobDesc)
+            jobDescText:SetTextColor(Color(255,255,255,255))
+            jobDescText:SetContentAlignment(5)
+            jobDescText:Dock(BOTTOM)
+            jobDescText:SetTall(H / 7)
+            jobDescText:SetWrap(true)
+
+            local icon = vgui.Create("DModelPanel", jobRightInfo)
+            icon:Dock(FILL)
+            icon:SetModel(jobModel)
+            icon:SetCamPos(Vector(50, 0, 65))
+
+        end
+
+        -- Adding jobs
+        local jobH = H / 12
+
+        for id, info in pairs(CRP_JobList) do
+
+            local jobName = info["name"]
+            local jobDesc = info["description"]
+            local maxPpl = info["max"]
+            local jobModel = info["models"][math.random(1, #info["models"])]
+            if maxPpl == -1 then maxPpl = "∞" end
+            local jobColor = info["color"]
+            local curPpl = 0
+            for _, ply in ipairs(player.GetAll()) do
+                if ply:GetJob() == id then curPpl = curPpl + 1 end
+            end
+
+            local jobButton = vgui.Create("DButton", jobLeftList)
+            jobButton:Dock(TOP)
+            jobButton:SetTall(jobH)
+            jobButton:SetFont("HUD_InteractionMenu")
+            jobButton:SetText(jobName .. "  (" .. curPpl .. " / " .. maxPpl .. ")")
+            jobButton:SetTextColor(Color(255,255,255,255))
+            jobButton:SetContentAlignment(5)
+            jobButton.Paint = function(self, w, h)
+                surface.SetDrawColor(41,41,41,168)
+                surface.DrawRect(0,0,w,h)
+                surface.SetDrawColor(jobColor)
+                surface.DrawOutlinedRect(0,0,w,h,2)
+            end
+            jobButton.OnCursorEntered = function()
+                jobButton:SetTextColor(Color(189,189,189))
+            surface.PlaySound("buttons/lightswitch2.wav")
+            end
+            jobButton.OnCursorExited = function()
+                jobButton:SetTextColor(Color(255,255,255,255))
+            end
+            jobButton.DoClick = function()
+                UpdateJobInfo(jobName, jobDesc, jobModel)
+            end
+
+        end
+
+        DrawCategoryButton("Профессии", function() end)
+
+    else
+
+        CRP_F4Frame:Close()
+        F4CD = CurTime() + 1
+
+    end
+
+end
+hook.Add("Think", "OpenF4Menu", function() 
+    if input.IsKeyDown(KEY_F4) then
+        DrawF4Menu()
+    end
+end)

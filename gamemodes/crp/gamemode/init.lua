@@ -10,6 +10,7 @@ AddCSLuaFile("playerdata/playermeta.lua")
 
 include("playerdata/datainitializer.lua")
 include("playerdata/playermeta.lua")
+include("playerdata/database.lua")
 -- Mechanics
 AddCSLuaFile("mechanics/cl_storeitem.lua")
 
@@ -20,11 +21,14 @@ include("mechanics/payday.lua")
 -- Anticheat
 include("anticheat/inventory.lua")
 include("anticheat/interactionmenu.lua")
+-- Jobs
+AddCSLuaFile("jobs/sh_jobmanager.lua")
+
+include("jobs/sh_jobmanager.lua")
 -- Others
 AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
 
-include("playerdata/database.lua")
 include("shared.lua")
 
 function GM:PlayerSpawn(ply)
