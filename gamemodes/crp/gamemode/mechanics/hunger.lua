@@ -1,7 +1,8 @@
 function Hunger(ply)
 
     if !(IsValid(ply)) then return end
-    if !(ply:Alive()) or (ply:IsBot()) then return end
+    if (ply:IsBot()) then return end
+    if !(ply:Alive()) then Hunger(ply) end
 
     local hungerAmount = 2.5
     if ply:GetHunger() - hungerAmount < 0 then
@@ -21,7 +22,7 @@ function Hunger(ply)
 
 end
 
-hook.Add("PlayerSpawn", "HungerStart", function(ply, trans) 
+hook.Add("PlayerInitialSpawn", "HungerStart", function(ply, trans) 
     ply:SetHunger(100)
     timer.Simple(math.random(60, 120), function() Hunger(ply) end)
 end)

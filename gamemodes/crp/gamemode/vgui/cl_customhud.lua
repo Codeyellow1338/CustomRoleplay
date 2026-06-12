@@ -965,7 +965,7 @@ local function DrawF4Menu()
         jobRightInfo:DockMargin(catPadding / 1.75, catPadding / 1.75, catPadding / 1.75, catPadding / 1.75)
         jobRightInfo.Paint = function(self, w, h) end
 
-        local function UpdateJobInfo(jobName, jobDesc, jobModel)
+        local function UpdateJobInfo(jobName, jobDesc, jobModel, id)
 
             jobRightInfo:Clear()
 
@@ -977,24 +977,32 @@ local function DrawF4Menu()
             jobNameText:Dock(TOP)
             jobNameText:SetTall(H / 12)
 
-            local requestJob = vgui.Create("DButton", jobRightInfo)
-            requestJob:Dock(BOTTOM)
-            requestJob:SetTall(H / 12)
-            requestJob.Paint = function(self, w, h)
-                surface.SetDrawColor(41,41,41,168)
-                surface.DrawRect(0,0,w,h)
-                surface.SetDrawColor(255,255,255,168)
-                surface.DrawOutlinedRect(0,0,w,h,2)
-            end
-            requestJob:SetFont("HUD_InteractionMenu")
-            requestJob:SetText("Устроиться")
-            requestJob:SetTextColor(Color(255,255,255,255))
-            requestJob.OnCursorEntered = function()
-                requestJob:SetTextColor(Color(189,189,189))
-                surface.PlaySound("buttons/lightswitch2.wav")
-            end
-            requestJob.OnCursorExited = function()
+            if id ~= LocalPlayer():GetJob() then
+                local requestJob = vgui.Create("DButton", jobRightInfo)
+                requestJob:Dock(BOTTOM)
+                requestJob:SetTall(H / 12)
+                requestJob.Paint = function(self, w, h)
+                    surface.SetDrawColor(41,41,41,168)
+                    surface.DrawRect(0,0,w,h)
+                    surface.SetDrawColor(255,255,255,168)
+                    surface.DrawOutlinedRect(0,0,w,h,2)
+                end
+                requestJob:SetFont("HUD_InteractionMenu")
+                requestJob:SetText("Устроиться")
                 requestJob:SetTextColor(Color(255,255,255,255))
+                requestJob.OnCursorEntered = function()
+                    requestJob:SetTextColor(Color(189,189,189))
+                    surface.PlaySound("buttons/lightswitch2.wav")
+                end
+                requestJob.OnCursorExited = function()
+                    requestJob:SetTextColor(Color(255,255,255,255))
+                end
+                requestJob.DoClick = function()
+                    net.Start("CRP_JobChangeRequest")
+                        net.WriteString(id)
+                    net.SendToServer()
+                    UpdateJobInfo(jobName, jobDesc, jobModel, id)
+                end
             end
 
             local jobDescText = vgui.Create("DLabel", jobRightInfo)
@@ -1017,6 +1025,8 @@ local function DrawF4Menu()
         local jobH = H / 12
 
         for id, info in pairs(CRP_JobList) do
+
+            --if id == LocalPlayer():GetJob() then continue end
 
             local jobName = info["name"]
             local jobDesc = info["description"]
@@ -1050,7 +1060,8 @@ local function DrawF4Menu()
                 jobButton:SetTextColor(Color(255,255,255,255))
             end
             jobButton.DoClick = function()
-                UpdateJobInfo(jobName, jobDesc, jobModel)
+                surface.PlaySound("buttons/button14.wav")
+                UpdateJobInfo(jobName, jobDesc, jobModel, id)
             end
 
         end
